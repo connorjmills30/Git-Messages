@@ -15,42 +15,71 @@
 
     <div id="repo">
       <label>Repo: </label>
-      <select class="repo-choice" @change="changeRepo($event)">
-        <option value="" selected disabled>Repos</option>
+      <select class="repo-choice" @change="changeRepo($event)" v-model="selectedRepo">
+        <option selected disabled>Repos</option>
         <option v-for="repo in Repos" :value="repo.name" :key="repo.id">{{ repo.name }}</option>
       </select>
     </div>
 
-    <br>
-
-    
-    
+    <br><br>    
   </div>
+
+  <Messages v-bind:data="repoData"/>
+  
 </template>
 
 <script>
-//import HelloWorld from './components/HelloWorld.vue'
-console.log('begin script');
+import Messages from './components/Messages.vue'
 
 export default {
   name: 'App',
   components: {
-    //HelloWorld
+    Messages
   },
   data() {
     return {
       username: 'colbybhearn',
       Repos: [],
-      selectedRepo: null
+      selectedRepo: null,
+      repoData: [],      
+      dummyRepoData: [
+        { 
+          "sha": "9876543210",
+          "commit": {
+            "author": {
+              "name": "Connor",
+              "date": "2021-06-10T06:24:09Z"
+            },
+            "message": "first message"
+          }
+        },
+          {
+          "sha": "1234567890",
+          "commit": {
+            "author": {
+              "name": "Dante",
+              "date": "2021-06-11T06:24:09Z"
+            },
+            "message": "Dante's second message."
+          }
+        }        
+      ],
+      headers: [
+          {text: 'Date', value: 'commit.committer.date'},
+          {text: 'Committer', value: 'commit.committer.name'},
+          {text: 'Message', value: 'commit.message'}
+      ],
     }
   },
   methods: {
     doSomething() {
-      // get the input
-      
-      
+      // search button pressed; get github repos owned by provided username 
+      // need to clear Repos?
+      this.Repos = [];
+      this.selectedRepo = "Repos"
+      //if (!this.username) return;
       var urlRepos = "https://api.github.com/users/" + this.username + "/repos";
-      console.log(urlRepos);
+      
       fetch(urlRepos)
         .then(response => {
           console.log(response);
@@ -64,9 +93,9 @@ export default {
           })
         });
     },
-    changeRepo(event) {
-      
-      this.selectedRepo = event.target.options[event.target.options.selectedIndex].text;
+    changeRepo() {
+      // new selection in repo dropdown => fetch repo data
+      //this.selectedRepo = event.target.options[event.target.options.selectedIndex].text;
       console.log('repo changed to ', this.selectedRepo);
       var urlCommits = "https://api.github.com/repos/" + this.username + "/" + this.selectedRepo + "/commits";
       console.log(urlCommits);
@@ -79,6 +108,7 @@ export default {
         .then(data => {
           console.log(data);
           if(data) {
+            this.repoData = data;
             data.forEach(commit => {
               var author = commit.commit.author.name;
               var message = commit.commit.message;
@@ -90,6 +120,7 @@ export default {
 
                 what kind of display options should there be? tabular, raw, verbose, brief, dates?
               */
+              // launch/insert/display Messages component?
             });
           }
           
@@ -98,9 +129,6 @@ export default {
     }
   }
 }
-
-
-
 
 </script>
 
