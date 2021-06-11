@@ -1,8 +1,6 @@
 <template>
   <div>
-    <h1>Messages Basic Table</h1>
-    
-    <table style="width:100%">
+    <table style="width:90%">
         <tr>
             <th>Date</th>
             <th>Name</th>

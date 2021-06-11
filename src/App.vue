@@ -6,23 +6,28 @@
   <div id="input">
     <div id="username">
       <label>Username: </label>
-      <input type="text" v-model="username"> 
+      <input type="text" v-model="username">
+      <input id="search" type="button" value="Search" @click=doSomething>
     </div>
 
     <br>
-    <input id="search" type="button" value="Search" @click=doSomething>
-    <br><br>
-
+    
     <div id="repo">
-      <label>Repo: </label>
-      <select class="repo-choice" @change="changeRepo($event)" v-model="selectedRepo">
-        <option selected disabled>Repos</option>
+      <label >Commit Messages for </label>
+      <select class="repo-choice" name="Repos" @change="changeRepo($event)" v-model="selectedRepo">
+        <option selected="true" disabled="true">Repos</option>
         <option v-for="repo in Repos" :value="repo.name" :key="repo.id">{{ repo.name }}</option>
       </select>
+
+      <label> on </label>
+
+      <month-picker-input :default-month="selectedMonth" :default-year="selectedYear" :input-pre-filled="true"></month-picker-input>
+
     </div>
 
-    <br><br>    
   </div>
+
+  <br><br>
 
   <Messages v-bind:data="repoData"/>
   
@@ -30,17 +35,19 @@
 
 <script>
 import Messages from './components/Messages.vue'
+import { MonthPickerInput } from 'vue-month-picker'
 
 export default {
   name: 'App',
   components: {
-    Messages
+    Messages,
+    MonthPickerInput
   },
   data() {
     return {
-      username: 'colbybhearn',
+      username: '',
       Repos: [],
-      selectedRepo: null,
+      selectedRepo: "Repos",
       repoData: [],      
       dummyRepoData: [
         { 
@@ -64,11 +71,8 @@ export default {
           }
         }        
       ],
-      headers: [
-          {text: 'Date', value: 'commit.committer.date'},
-          {text: 'Committer', value: 'commit.committer.name'},
-          {text: 'Message', value: 'commit.message'}
-      ],
+      selectedMonth: new Date().getMonth(),//((Date.now().getMonth()-1 % 11 ) + 11 ) % 11,
+      selectedYear: new Date().getFullYear()
     }
   },
   methods: {
