@@ -14,14 +14,14 @@
     
     <div id="repo">
       <label >Commit Messages for </label>
-      <select class="repo-choice" name="Repos" @change="changeRepo($event)" v-model="selectedRepo">
+      <select class="repo-choice" name="Repos" @change="fetchMessages" v-model="selectedRepo">
         <option selected="true" disabled="true">Repos</option>
         <option v-for="repo in Repos" :value="repo.name" :key="repo.id">{{ repo.name }}</option>
       </select>
 
       <label> on </label>
 
-      <month-picker-input :default-month="selectedMonth" :default-year="selectedYear" :input-pre-filled="true"></month-picker-input>
+      <month-picker-input :default-month="preferredMonth" :default-year="preferredYear" :input-pre-filled="true" @change="updateDate"></month-picker-input>
 
     </div>
 
@@ -71,14 +71,27 @@ export default {
           }
         }        
       ],
-      selectedMonth: new Date().getMonth(),//((Date.now().getMonth()-1 % 11 ) + 11 ) % 11,
-      selectedYear: new Date().getFullYear()
+      currentMonth: new Date().getMonth(),//((Date.now().getMonth()-1 % 11 ) + 11 ) % 11,
+      currentYear: new Date().getFullYear()
+    }
+  },
+  computed: {
+    preferredMonth: function() {
+      if (this.currentMonth == 0) {
+        return 12;
+      } else {
+        return this.currentMonth;
+      }
+    },
+    preferredYear: function() {
+      return this.currentYear;
     }
   },
   methods: {
     doSomething() {
       // search button pressed; get github repos owned by provided username 
-      // need to clear Repos?
+      if (!this.username) return;
+      // clear Repos before we search for a new set
       this.Repos = [];
       this.selectedRepo = "Repos"
       //if (!this.username) return;
@@ -86,50 +99,45 @@ export default {
       
       fetch(urlRepos)
         .then(response => {
-          console.log(response);
           return response.json();
         })
         .then(data => {
-          console.log(data);
           data.forEach(repo => {
-              console.log(repo.name, '(', repo.id, ')');
+              //console.log(repo.name, '(', repo.id, ')');
               this.Repos.push(repo)
           })
         });
     },
-    changeRepo() {
-      // new selection in repo dropdown => fetch repo data
-      //this.selectedRepo = event.target.options[event.target.options.selectedIndex].text;
-      console.log('repo changed to ', this.selectedRepo);
-      var urlCommits = "https://api.github.com/repos/" + this.username + "/" + this.selectedRepo + "/commits";
-      console.log(urlCommits);
+    fetchMessages() {
+      // called when Repo dropdown changes or vue-month-picker changes
+      if(!this.selectedRepo || !this.username) return; 
+            
+      let sinceKey =  this.preferredYear + "-" + this.preferredMonth + "-01T00:00:00Z"
+      let untilKey = this.preferredYear + "-" + this.preferredMonth + "-31T59:59:59Z"
+      var urlCommits = "https://api.github.com/repos/" + this.username + "/" + this.selectedRepo + "/commits?since=" + sinceKey 
+        + "&until=" + untilKey;
+      //console.log(urlCommits);
       
       fetch(urlCommits)
         .then(response => {
-          console.log(response);
+          //console.log(response);
           return response.json();
         })
         .then(data => {
-          console.log(data);
-          if(data) {
+          //console.log(data);
+          if(data && data.message != "Not Found") {
             this.repoData = data;
-            data.forEach(commit => {
-              var author = commit.commit.author.name;
-              var message = commit.commit.message;
-              console.log(author, ": ", message);
-              /*
-                End here for the day, todo:
-                how do we want to display this data? tables? <b-table>
-                mess around with ui order and formatting. is it clean and intuative?
-
-                what kind of display options should there be? tabular, raw, verbose, brief, dates?
-              */
-              // launch/insert/display Messages component?
-            });
-          }
-          
-          
+          }    
         });
+    },
+    updateDate(date) {
+      //console.log(date);
+      // update date state
+      this.currentMonth = date.monthIndex;
+      this.currentYear = date.year;
+
+      // fetch new messages
+      this.fetchMessages();
     }
   }
 }
