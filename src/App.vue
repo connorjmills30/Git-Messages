@@ -1,7 +1,7 @@
 <template>
   <!-- <img alt="Vue logo" src="./assets/logo.png"> -->
   <!-- <HelloWorld msg="Welcome to Your Vue.js App"/> -->
-  <h1>Git Messages</h1>
+  <h1>Local Git Messages</h1>
 
   <div id="input">
     <div id="username">
@@ -72,7 +72,8 @@ export default {
         }        
       ],
       currentMonth: new Date().getMonth(),//((Date.now().getMonth()-1 % 11 ) + 11 ) % 11,
-      currentYear: new Date().getFullYear()
+      currentYear: new Date().getFullYear(),
+      pat: ""
     }
   },
   computed: {
@@ -90,7 +91,11 @@ export default {
   methods: {
     doSomething() {
       // search button pressed; get github repos owned by provided username 
-      if (!this.username) return;
+      if (!this.username) {
+        return;
+      } else {
+        this.testAuthentication();
+      }
       // clear Repos before we search for a new set
       this.Repos = [];
       this.selectedRepo = "Repos"
@@ -128,7 +133,7 @@ export default {
           if(data && data.message != "Not Found") {
             this.repoData = data;
           }    
-        });
+      });
     },
     updateDate(date) {
       //console.log(date);
@@ -138,6 +143,29 @@ export default {
 
       // fetch new messages
       this.fetchMessages();
+    },
+    testAuthentication() {
+      const client_id = "ecb0b5ae0acc89d32cee";
+      //const redirect_uri = "The URL in your application where users will be sent after authorization";
+      const local_redirect_uri = "localhost:8080";
+      const login = this.username;
+      //const scope = "space-delimited list of scopes"
+      const state = "this should be an unguessable random string but it currently is pretty guessable" // generate this
+      //const allow_signup = "true"
+      let authRequest = "https://github.com/login/oauth/authorize?login=" + login + "&client_id=" + client_id
+        + "&state=" + state + "&redirect_uri=" + local_redirect_uri;
+
+      fetch(authRequest)
+        .then(response => {
+          console.log(response);
+          return response.json();
+        })
+        .then(data => {
+          //console.log(data);
+          if(data && data.message != "Not Found") {
+            console.log(data);
+          }    
+      });
     }
   }
 }
