@@ -1,7 +1,7 @@
 <template>
   <!-- <img alt="Vue logo" src="./assets/logo.png"> -->
   <!-- <HelloWorld msg="Welcome to Your Vue.js App"/> -->
-  <h1>Local Git Messages</h1>
+  <h1>Git Messages</h1>
 
   <div id="input">
     <div id="username">
@@ -147,13 +147,15 @@ export default {
     testAuthentication() {
       const client_id = "ecb0b5ae0acc89d32cee";
       //const redirect_uri = "The URL in your application where users will be sent after authorization";
-      const local_redirect_uri = "localhost:8080";
+      //const local_redirect_uri = "localhost:8080";
       const login = this.username;
       //const scope = "space-delimited list of scopes"
       const state = "this should be an unguessable random string but it currently is pretty guessable" // generate this
       //const allow_signup = "true"
+      //let authRequest = "https://github.com/login/oauth/authorize?login=" + login + "&client_id=" + client_id
+      //  + "&state=" + state + "&redirect_uri=" + local_redirect_uri;
       let authRequest = "https://github.com/login/oauth/authorize?login=" + login + "&client_id=" + client_id
-        + "&state=" + state + "&redirect_uri=" + local_redirect_uri;
+        + "&state=" + state;
 
       fetch(authRequest)
         .then(response => {
