@@ -6,9 +6,9 @@
   <div id="input">
     <div id="username">
       <label>Username: </label>
-      <input type="text" v-model="username">
+      <input type="text" v-model="username" @keyup.enter=listRepos>
       <input type="text" v-model="token">
-      <input id="search" type="button" value="Search" @click=searchUser>
+      <input id="search" type="button" value="List Repos" @click=listRepos>
     </div>
 
     <br>
@@ -69,7 +69,7 @@ export default {
     }
   },
   methods: {
-    searchUser() {
+    listRepos() {
       // search button pressed; get github repos owned by provided username 
       if (!this.username && !this.token) {
         return;
