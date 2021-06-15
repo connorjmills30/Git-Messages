@@ -6,8 +6,7 @@
   <div id="input">
     <div id="username">
       <label>Username: </label>
-      <input type="text" v-model="username" @keyup.enter=listRepos>
-      <input type="text" v-model="token">
+      <input type="text" v-model="userInput" @keyup.enter=listRepos>
       <input id="search" type="button" value="List Repos" @click=listRepos>
     </div>
 
@@ -47,13 +46,14 @@ export default {
   },
   data() {
     return {
+      userInput: '',
       username: '',
+      token: "",
       Repos: [],
       selectedRepo: "Repos",
       repoData: [],      
       currentMonth: new Date().getMonth(),//((Date.now().getMonth()-1 % 11 ) + 11 ) % 11,
       currentYear: new Date().getFullYear(),
-      token: ""
     }
   },
   computed: {
@@ -70,64 +70,83 @@ export default {
   },
   methods: {
     listRepos() {
-      // search button pressed; get github repos owned by provided username 
-      if (!this.username && !this.token) {
-        return;
-      } else {
-        this.testAuthentication();
-      }
-      // clear Repos before we search for a new set
+      // search button pressed; get github repos for the user
+
+      // clear Repos and user state before we search for a new set
+      this.username = "";
+      this.token = "";
       this.Repos = [];
       this.selectedRepo = "Repos"
-      var urlRepos = "https://api.github.com/users/" + this.username + "/repos";
       
-      fetch(urlRepos)
+      // is the userInput a token, username, or an organization?
+      const input = this.userInput;
+
+      const requestWithAuth = request.defaults({
+        headers: {
+          authorization: "token " + input,
+        },
+      });
+      requestWithAuth("GET /user")
         .then(response => {
-          return response.json();
-        })
-        .then(data => {
-          if (data && data.message != "Not Found") {
-            data.forEach(repo => {
-              this.Repos.push(repo)
-            })
+          //console.log('userinput is a token')
+          // userInput is a token => set state => fetch repos
+          if(response.data && response.data.login) {
+            this.username = response.data.login;
           }
-        });
+          this.token = input;
+          this.fetchReposWithToken();
+        })
+        .catch(error => {
+          console.log(error);
+          // userinput is not a token; is it a username?
+          request("GET /users/{username}", {username: input})
+            .then(response => {
+              //console.log("input is a username");
+              if(response.data && response.data.login) {
+                this.username = response.data.login;
+              }
+              this.fetchReposWithUsername();
+            })
+            .catch(error => {
+              console.log(error);
+              //request("GET /orgs/{org}")
+            })
+        }) 
+
     },
     fetchMessages() {
       // called when Repo dropdown changes or vue-month-picker changes
       if(!this.selectedRepo || !this.username) return; 
-            
-      let sinceKey =  this.preferredYear + "-" + this.preferredMonth + "-01T00:00:00Z"
-      let untilKey = this.preferredYear + "-" + this.preferredMonth + "-31T59:59:59Z"
-      var urlCommits = "https://api.github.com/repos/" + this.username + "/" + this.selectedRepo + "/commits?since=" + sinceKey 
-        + "&until=" + untilKey;
       
-      fetch(urlCommits)
-        .then(response => {
-          return response.json();
+      let sinceDate =  this.preferredYear + "-" + this.preferredMonth + "-01T00:00:00Z"
+      let untilDate = this.preferredYear + "-" + this.preferredMonth + "-31T59:59:59Z"
+
+      if (this.token) {
+        const requestWithAuth = request.defaults({
+          headers: {
+            authorization: "token " + this.token,
+          },
+        });
+        const getCommits =  "GET /repos/" + this.username + "/" + this.selectedRepo + "/commits?since=" + sinceDate + "&until=" + untilDate;
+        requestWithAuth(getCommits)
+          .then(response => {
+            //console.log(response.data);
+            this.repoData = response.data;
+          })  
+      } else if (this.username) {
+        
+        request("GET /repos/{owner}/{repo}/commits", {
+          owner: this.username,
+          repo: this.selectedRepo,
+          since: sinceDate,
+          until: untilDate
+        }).then(response => {
+          //console.log(response.data);
+          this.repoData = response.data;
         })
-        .then(data => {
-          if(data && data.message != "Not Found") {
-            this.repoData = data;
-          }    
-      });
-
-      const requestWithAuth = request.defaults({
-        headers: {
-          authorization: "token " + this.token,
-        },
-      });
-      const getCommits =  "GET /repos/" + this.username + "/" + this.selectedRepo + "/commits?since=" + sinceKey + "&until=" + untilKey;
-      requestWithAuth(getCommits)
-        .then(response => {
-          console.log("commits with auth");          
-          console.log(response);
-        })  
-
-
+      }
     },
     updateDate(date) {
-      //console.log(date);
       // update date state
       this.currentMonth = date.monthIndex;
       this.currentYear = date.year;
@@ -135,40 +154,33 @@ export default {
       // fetch new messages
       this.fetchMessages();
     },
-    testAuthentication() {
-      /* OAUTH TESTING; NOT MVP 
-      const client_id = "ecb0b5ae0acc89d32cee";
-      //const redirect_uri = "The URL in your application where users will be sent after authorization";
-      //const local_redirect_uri = "localhost:8080";
-      const login = this.username;
-      //const scope = "space-delimited list of scopes"
-      const state = "this should be an unguessable random string but it currently is pretty guessable" // generate this
-      //const allow_signup = "true"
-      //let authRequest = "https://github.com/login/oauth/authorize?login=" + login + "&client_id=" + client_id
-      //  + "&state=" + state + "&redirect_uri=" + local_redirect_uri;
-      let authRequest = "https://github.com/login/oauth/authorize?login=" + login + "&client_id=" + client_id
-        + "&state=" + state;
-      */
+    fetchReposWithToken() {
+      
       const requestWithAuth = request.defaults({
         headers: {
           authorization: "token " + this.token,
         },
       });
-      requestWithAuth("GET /user")
-        .then(response => {
-          console.log('user data: ')
-          console.log(response);
-          if(response.data && response.data.login) {
-            this.username = response.data.login;
-          }
-        }) 
+      
       requestWithAuth("GET /user/repos")
         .then(response => {
-          console.log(response);
           response.data.forEach(repo => {
             this.Repos.push(repo)
           })
         })  
+    },
+    fetchReposWithUsername() {
+      
+      request("GET /users/{username}/repos", {username: this.username})
+        .then(response => {
+          if (response.data ) {
+            response.data.forEach(repo => this.Repos.push(repo));
+          }
+        })
+        .catch(error => {
+          console.log(error);
+        })
+
     }
   }
 }
