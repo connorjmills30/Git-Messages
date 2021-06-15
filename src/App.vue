@@ -7,7 +7,8 @@
     <div id="username">
       <label>Username: </label>
       <input type="text" v-model="username">
-      <input id="search" type="button" value="Search" @click=doSomething>
+      <input type="text" v-model="token">
+      <input id="search" type="button" value="Search" @click=searchUser>
     </div>
 
     <br>
@@ -36,6 +37,7 @@
 <script>
 import Messages from './components/Messages.vue'
 import { MonthPickerInput } from 'vue-month-picker'
+import { request } from "@octokit/request";
 
 export default {
   name: 'App',
@@ -49,31 +51,9 @@ export default {
       Repos: [],
       selectedRepo: "Repos",
       repoData: [],      
-      dummyRepoData: [
-        { 
-          "sha": "9876543210",
-          "commit": {
-            "author": {
-              "name": "Connor",
-              "date": "2021-06-10T06:24:09Z"
-            },
-            "message": "first message"
-          }
-        },
-          {
-          "sha": "1234567890",
-          "commit": {
-            "author": {
-              "name": "Dante",
-              "date": "2021-06-11T06:24:09Z"
-            },
-            "message": "Dante's second message."
-          }
-        }        
-      ],
       currentMonth: new Date().getMonth(),//((Date.now().getMonth()-1 % 11 ) + 11 ) % 11,
       currentYear: new Date().getFullYear(),
-      pat: ""
+      token: ""
     }
   },
   computed: {
@@ -89,9 +69,9 @@ export default {
     }
   },
   methods: {
-    doSomething() {
+    searchUser() {
       // search button pressed; get github repos owned by provided username 
-      if (!this.username) {
+      if (!this.username && !this.token) {
         return;
       } else {
         this.testAuthentication();
@@ -99,7 +79,6 @@ export default {
       // clear Repos before we search for a new set
       this.Repos = [];
       this.selectedRepo = "Repos"
-      //if (!this.username) return;
       var urlRepos = "https://api.github.com/users/" + this.username + "/repos";
       
       fetch(urlRepos)
@@ -107,10 +86,11 @@ export default {
           return response.json();
         })
         .then(data => {
-          data.forEach(repo => {
-              //console.log(repo.name, '(', repo.id, ')');
+          if (data && data.message != "Not Found") {
+            data.forEach(repo => {
               this.Repos.push(repo)
-          })
+            })
+          }
         });
     },
     fetchMessages() {
@@ -121,19 +101,30 @@ export default {
       let untilKey = this.preferredYear + "-" + this.preferredMonth + "-31T59:59:59Z"
       var urlCommits = "https://api.github.com/repos/" + this.username + "/" + this.selectedRepo + "/commits?since=" + sinceKey 
         + "&until=" + untilKey;
-      //console.log(urlCommits);
       
       fetch(urlCommits)
         .then(response => {
-          //console.log(response);
           return response.json();
         })
         .then(data => {
-          //console.log(data);
           if(data && data.message != "Not Found") {
             this.repoData = data;
           }    
       });
+
+      const requestWithAuth = request.defaults({
+        headers: {
+          authorization: "token " + this.token,
+        },
+      });
+      const getCommits =  "GET /repos/" + this.username + "/" + this.selectedRepo + "/commits?since=" + sinceKey + "&until=" + untilKey;
+      requestWithAuth(getCommits)
+        .then(response => {
+          console.log("commits with auth");          
+          console.log(response);
+        })  
+
+
     },
     updateDate(date) {
       //console.log(date);
@@ -145,6 +136,7 @@ export default {
       this.fetchMessages();
     },
     testAuthentication() {
+      /* OAUTH TESTING; NOT MVP 
       const client_id = "ecb0b5ae0acc89d32cee";
       //const redirect_uri = "The URL in your application where users will be sent after authorization";
       //const local_redirect_uri = "localhost:8080";
@@ -156,18 +148,27 @@ export default {
       //  + "&state=" + state + "&redirect_uri=" + local_redirect_uri;
       let authRequest = "https://github.com/login/oauth/authorize?login=" + login + "&client_id=" + client_id
         + "&state=" + state;
-
-      fetch(authRequest)
+      */
+      const requestWithAuth = request.defaults({
+        headers: {
+          authorization: "token " + this.token,
+        },
+      });
+      requestWithAuth("GET /user")
+        .then(response => {
+          console.log('user data: ')
+          console.log(response);
+          if(response.data && response.data.login) {
+            this.username = response.data.login;
+          }
+        }) 
+      requestWithAuth("GET /user/repos")
         .then(response => {
           console.log(response);
-          return response.json();
-        })
-        .then(data => {
-          //console.log(data);
-          if(data && data.message != "Not Found") {
-            console.log(data);
-          }    
-      });
+          response.data.forEach(repo => {
+            this.Repos.push(repo)
+          })
+        })  
     }
   }
 }
