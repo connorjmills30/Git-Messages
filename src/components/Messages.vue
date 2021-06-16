@@ -6,10 +6,13 @@
             <!--<th>Name</th>-->
             <th>Message</th>
         </tr>
-        <tr v-for="(entry) in formattedData" :key="entry.day">
+        <tr v-for="(entry) in formattedData" :key="entry.day" v-bind:id="entry.day">
             <td class="day-column"> {{ entry.day }} </td>
             <!--<td> {{ entry.author }} </td>-->
-            <td class="message-column"> {{ entry.message }} </td>
+            <td class="message-column" v-bind:id="entry.day"> {{ entry.message }} </td>
+            <td>
+                <button @click="copyToClipboard(entry.message)">Copy</button>
+            </td>
         </tr>
     </table>
     <!---
@@ -71,6 +74,20 @@ export default {
             tableData.sort((firstEntry, secondEntry) => firstEntry.day - secondEntry.day);
             return tableData
       }
+    },
+    methods: {
+        copyToClipboard(message) {
+            try {
+                const el = document.createElement('textarea');
+                el.value = message;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+            } catch (error) {
+                console.log(error);
+            }
+        }
     }
 };
 </script>
@@ -79,7 +96,7 @@ export default {
 
 table {
     border: 3px solid black;
-    width: 90%;
+    width: 100%;
     border-collapse: collapse;
 }
 
