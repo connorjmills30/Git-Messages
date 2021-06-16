@@ -12,7 +12,7 @@
 
     <br>
     
-    <div id="repo">
+    
       <label >Commit Messages for </label>
       <select class="repo-choice" name="Repos" @change="fetchMessages" v-model="selectedRepo">
         <option selected="true" disabled="true">Repos</option>
@@ -23,7 +23,7 @@
 
       <month-picker-input :default-month="preferredMonth" :default-year="preferredYear" :input-pre-filled="true" @change="updateDate"></month-picker-input>
 
-    </div>
+    
 
   </div>
 
@@ -198,7 +198,28 @@ export default {
 }
 
 #input {
-  color: #075f0b;
+  width: auto;
+  padding: 20px;
+  display: inline-block;
+  border: 3px outset darkslategrey;
+  background-color: rgb(140, 152, 163);
+  
+  font-weight: bold;
+}
+
+.repo-choice {
+  min-width: 120px; 
+}
+
+.month-picker-input {
+  font-weight: bold;
+  text-align: center;
+}
+
+.month-picker-input-container {
+  margin-top: 15px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 </style>
