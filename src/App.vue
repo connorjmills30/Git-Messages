@@ -29,7 +29,7 @@
 
   <br><br>
 
-  <Messages v-bind:data="repoData"/>
+  <Messages v-bind:data="repoData" v-bind:user="username"/>
   
 </template>
 
