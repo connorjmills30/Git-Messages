@@ -88,7 +88,8 @@ export default {
       });
       requestWithAuth("GET /user")
         .then(response => {
-          //console.log('userinput is a token')
+          console.log('GET /user')
+          console.log(response);
           // userInput is a token => set state => fetch repos
           if(response.data && response.data.login) {
             this.username = response.data.login;
@@ -101,7 +102,8 @@ export default {
           // userinput is not a token; is it a username?
           request("GET /users/{username}", {username: input})
             .then(response => {
-              //console.log("input is a username");
+              console.log("GET /users/{username}");
+              console.log(response);
               if(response.data && response.data.login) {
                 this.username = response.data.login;
               }
@@ -122,15 +124,21 @@ export default {
       let untilDate = this.preferredYear + "-" + this.preferredMonth + "-31T59:59:59Z"
 
       if (this.token) {
+        // test repo owner
+        console.log("SELECTED REPO:");
+        console.log(this.selectedRepo);
+        const repoOwner = this.Repos.find(repo => repo.name == this.selectedRepo).owner.login;
+
         const requestWithAuth = request.defaults({
           headers: {
             authorization: "token " + this.token,
           },
         });
-        const getCommits =  "GET /repos/" + this.username + "/" + this.selectedRepo + "/commits?since=" + sinceDate + "&until=" + untilDate;
+        const getCommits =  "GET /repos/" + repoOwner + "/" + this.selectedRepo + "/commits?since=" + sinceDate + "&until=" + untilDate;
         requestWithAuth(getCommits)
           .then(response => {
-            //console.log(response.data);
+            console.log(getCommits);
+            console.log(response.data);
             this.repoData = response.data;
           })  
       } else if (this.username) {
@@ -141,7 +149,8 @@ export default {
           since: sinceDate,
           until: untilDate
         }).then(response => {
-          //console.log(response.data);
+          console.log("GET /repos/{owner}/{repo}/commits");
+          console.log(response.data);
           this.repoData = response.data;
         })
       }
@@ -164,6 +173,8 @@ export default {
       
       requestWithAuth("GET /user/repos")
         .then(response => {
+          console.log("GET /user/repos");
+          console.log(response.data);
           response.data.forEach(repo => {
             this.Repos.push(repo)
           })
@@ -173,6 +184,8 @@ export default {
       
       request("GET /users/{username}/repos", {username: this.username})
         .then(response => {
+          console.log("GET /users/{username}/repos");
+          console.log(response.data);
           if (response.data ) {
             response.data.forEach(repo => this.Repos.push(repo));
           }
@@ -202,7 +215,7 @@ export default {
   padding: 20px;
   display: inline-block;
   border: 3px outset darkslategrey;
-  background-color: rgb(140, 152, 163);
+  background-color: rgb(127, 164, 199);
   
   font-weight: bold;
 }
